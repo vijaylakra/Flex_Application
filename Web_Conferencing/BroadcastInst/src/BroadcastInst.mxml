@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="1023" height="662" minWidth="955" minHeight="600"
+			   creationComplete="application1_creationCompleteHandler(event)"
+			   pageTitle="VCR- Instructor Page">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayList;
+			import mx.controls.Alert;
+			import mx.core.UIComponent;
+			import mx.core.mx_internal;
+			import mx.events.FlexEvent;
+			import mx.rpc.remoting.RemoteObject;
+			
+			private var remote:RemoteObject;
+			private var camera:Camera;
+			private var microphone:Microphone;
+			private var connection:NetConnection;
+			private var outStream:NetStream ,inStream:NetStream;
+			private var objNetStream:NetStream;
+			private var inVideo:Video ,outVideo:Video;
+			
+						
+			protected function application1_creationCompleteHandler(event:FlexEvent):void
+			{
+				try
+				{
+					//Alert.show("creation time","onCreation");
+					connection = new NetConnection();
+					connection.addEventListener(NetStatusEvent.NET_STATUS,onCreated);
+					//connection.connect("rtmp://10.1.60.140/streamlive");
+					//connection.connect("rtmp://10.1.60.140:1935/live");
+					//connection.connect("rtmp://localhost/live");
+					connection.connect("rtmp://localhost/SOSample");
+					//connection.connect("rtmp://localhost/SOSample");
+					
+					//connection.connect("rtmp://127.0.0.1:1935/live");
+				}
+				catch(Err:Error)
+				{
+					Alert.show("Net Not available..Connection Error !");
+					
+				}
+				
+			}
+			public function onCreated(event:NetStatusEvent):void
+			{
+				//Alert.show(event.info.code,"event.info.code");
+				try
+				{
+					
+					if(event.info.code =="NetConnection.Connect.Success")
+					{
+						btShowInstructor.enabled=true;
+						//btShowParticipent1.enabled=true;
+						//	Alert.show("Connection Successful ","Server Connection");
+					}
+						//Alert.show("Connection Successful ","Server Connection");
+					else
+						Alert.show("Connection Fail ","Server Connection");
+				}
+				catch(Err:Error)
+				{
+					Alert.show(Err.message,"Error");
+				}
+			}
+			
+			
+			protected function btBroadcast_clickHandler(event:MouseEvent):void
+			{
+				BroadcastWebcam();			
+				
+			}
+			public function BroadcastWebcam():void
+			{
+				camera = Camera.getCamera();
+				if(camera)
+				{
+					
+					
+					var objH264:H264VideoStreamSettings = new H264VideoStreamSettings();
+					objH264.setProfileLevel(H264Profile.BASELINE,H264Level.LEVEL_2_2);
+					
+					objH264.setQuality(0,70);
+					objH264.setKeyFrameInterval(1);
+					
+					var volumeAdjust:SoundTransform = new SoundTransform();
+					volumeAdjust.volume = 1;
+					volumeAdjust.pan = 0;
+					
+					camera.setQuality(0,40);
+					camera.setMotionLevel(100);
+					camera.setKeyFrameInterval(1);
+					camera.setLoopback(false);
+					camera.setMode(videoInstructor.width,videoInstructor.height,30,false);
+					
+					microphone = Microphone.getEnhancedMicrophone();
+					//	microphone.codec ="speex";
+					//	microphone.codec =SoundCodec.NELLYMOSER;  //for recording
+					microphone.codec =SoundCodec.SPEEX;    //for live
+					microphone.enableVAD = true;
+					microphone.setLoopBack(false);
+					microphone.setUseEchoSuppression(true);
+					microphone.setSilenceLevel(0,2000);
+					microphone.rate=44;
+					microphone.gain=1;
+					microphone.encodeQuality = 7;
+					microphone.framesPerPacket = 1;
+					
+					
+					var micOption:MicrophoneEnhancedOptions = new MicrophoneEnhancedOptions();
+					micOption.mode = MicrophoneEnhancedMode.FULL_DUPLEX;
+					micOption.echoPath = 128;
+					micOption.autoGain = false;
+					micOption.nonLinearProcessing = true;
+					
+					
+					microphone.enhancedOptions = micOption;
+					
+					
+					
+					outStream = new NetStream(connection);
+					outStream.attachCamera(camera);
+					outStream.attachAudio(microphone);
+					outStream.soundTransform = volumeAdjust;
+					outStream.videoStreamSettings = objH264;	
+					
+					//outStream.publish("mp4:instructor.mp4","record");
+					outStream.publish("instructor.flv");
+					videoInstructor.attachCamera(camera);
+					//startTimer();
+				}
+				else
+					Alert.show("No Camera install....","Camera Information");
+				
+				participant0();
+				participant1();
+				participant2();
+				participant3();
+				participant4();
+				participant5();
+				participant6();
+				participant7();
+				
+			}
+			
+			
+			
+		
+			
+			protected function participant0():void
+			{
+				
+				
+				inStream = new NetStream(connection);
+				inStream.videoReliable = true;
+				inStream.audioReliable = true;
+				inStream.dataReliable =  true;
+				inVideo = new Video();
+				inVideo.width = videoParticipant0.width;
+				inVideo.height = videoParticipant0.height;
+				inVideo.smoothing = true;
+				inVideo.clear();
+				inVideo.attachNetStream(inStream);
+				videoParticipant0.addChild(inVideo);
+				
+				inStream.play("participant00.flv");
+				
+				
+			}
+			
+			protected function participant1():void
+			{
+				//Alert.show("here","part1");
+				inStream = new NetStream(connection);
+				inStream.videoReliable = true;
+				inStream.audioReliable = true;
+				inStream.dataReliable =  true;
+				inVideo = new Video();
+				inVideo.width = videoParticipant1.width;
+				inVideo.height = videoParticipant1.height;
+				inVideo.smoothing = true;
+				inVideo.clear();
+				inVideo.attachNetStream(inStream);
+				videoParticipant1.addChild(inVideo);
+				//	inStream.play("mp4:participant.f4v");   //for record
+				inStream.play("participant1.flv");  //for live
+				
+			}
+			protected function participant2():void
+			{
+				//Alert.show("here","part1");
+				inStream = new NetStream(connection);
+				inStream.videoReliable = true;
+				inStream.audioReliable = true;
+				inStream.dataReliable =  true;
+				inVideo = new Video();
+				inVideo.width = videoParticipant2.width;
+				inVideo.height = videoParticipant2.height;
+				inVideo.smoothing = true;
+				inVideo.clear();
+				inVideo.attachNetStream(inStream);
+				videoParticipant2.addChild(inVideo);
+				//	inStream.play("mp4:participant.f4v");   //for record
+				inStream.play("participant2.flv");  //for live
+				
+			}
+			
+			protected function participant3():void
+			{
+				//Alert.show("here","part1");
+				inStream = new NetStream(connection);
+				inStream.videoReliable = true;
+				inStream.audioReliable = true;
+				inStream.dataReliable =  true;
+				inVideo = new Video();
+				inVideo.width = videoParticipant3.width;
+				inVideo.height = videoParticipant3.height;
+				inVideo.smoothing = true;
+				inVideo.clear();
+				inVideo.attachNetStream(inStream);
+				videoParticipant3.addChild(inVideo);
+				//	inStream.play("mp4:participant.f4v");   //for record
+				inStream.play("participant3.flv");  //for live
+				
+			}
+			protected function participant4():void
+			{
+				//Alert.show("here","part1");
+				inStream = new NetStream(connection);
+				inStream.videoReliable = true;
+				inStream.audioReliable = true;
+				inStream.dataReliable =  true;
+				inVideo = new Video();
+				inVideo.width = videoParticipant4.width;
+				inVideo.height = videoParticipant4.height;
+				inVideo.smoothing = true;
+				inVideo.clear();
+				inVideo.attachNetStream(inStream);
+				videoParticipant4.addChild(inVideo);
+				//	inStream.play("mp4:participant.f4v");   //for record
+				inStream.play("participant4.flv");  //for live
+				
+			}
+			protected function participant5():void
+			{
+				//Alert.show("here","part1");
+				inStream = new NetStream(connection);
+				inStream.videoReliable = true;
+				inStream.audioReliable = true;
+				inStream.dataReliable =  true;
+				inVideo = new Video();
+				inVideo.width = videoParticipant5.width;
+				inVideo.height = videoParticipant5.height;
+				inVideo.smoothing = true;
+				inVideo.clear();
+				inVideo.attachNetStream(inStream);
+				videoParticipant5.addChild(inVideo);
+				//	inStream.play("mp4:participant.f4v");   //for record
+				inStream.play("participant5.flv");  //for live
+				
+			}
+			protected function participant6():void
+			{
+				//Alert.show("here","part1");
+				inStream = new NetStream(connection);
+				inStream.videoReliable = true;
+				inStream.audioReliable = true;
+				inStream.dataReliable =  true;
+				inVideo = new Video();
+				inVideo.width = videoParticipant6.width;
+				inVideo.height = videoParticipant6.height;
+				inVideo.smoothing = true;
+				inVideo.clear();
+				inVideo.attachNetStream(inStream);
+				videoParticipant6.addChild(inVideo);
+				//	inStream.play("mp4:participant.f4v");   //for record
+				inStream.play("participant6.flv");  //for live
+				
+			}
+			protected function participant7():void
+			{
+				//Alert.show("here","part1");
+				inStream = new NetStream(connection);
+				inStream.videoReliable = true;
+				inStream.audioReliable = true;
+				inStream.dataReliable =  true;
+				inVideo = new Video();
+				inVideo.width = videoParticipant7.width;
+				inVideo.height = videoParticipant7.height;
+				inVideo.smoothing = true;
+				inVideo.clear();
+				inVideo.attachNetStream(inStream);
+				videoParticipant7.addChild(inVideo);
+				//	inStream.play("mp4:participant.f4v");   //for record
+				inStream.play("participant7.flv");  //for live
+				
+			}
+			
+			protected function Qsession_clickHandler(event:MouseEvent):void
+			{
+				inStream = new NetStream(connection);
+				inStream.videoReliable = true;
+				inStream.audioReliable = true;
+				inStream.dataReliable =  true;
+				inVideo = new Video();
+				inVideo.width =videoParticipant8.width;
+				inVideo.height = videoParticipant8.height;
+				inVideo.smoothing = true;
+				inVideo.clear();
+				inVideo.attachNetStream(inStream);
+				videoParticipant8.addChild(inVideo);
+				inStream.play("question.flv"); 
+				
+			}
+			
+			
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:Button id="btShowInstructor" x="108" y="291" width="360" height="33"
+			  label="Broadcast" click="btBroadcast_clickHandler(event)" enabled="false"
+			  fontSize="14"/>
+	<mx:Panel id="pnlPrt7" x="677" y="52" width="276" height="219" backgroundAlpha="1"
+			  backgroundColor="0x000000" title="Participant">
+		<s:VideoDisplay id="videoParticipant8" x="436" y="29" height="186"  width="271"/>
+	</mx:Panel>
+	<s:Button id="Question" x="739" y="291" label="Allow to ask questions"
+			  click="Qsession_clickHandler(event)" fontFamily="Georgia" fontSize="13"/>
+	<s:VideoDisplay id="videoParticipant0" x="10" y="347" width="191" height="139"
+					chromeColor="#100F0F"/>
+	<s:VideoDisplay id="videoParticipant1" x="206" y="347" height="138"  width="188"/>
+	<s:VideoDisplay id="videoParticipant2" x="401" y="347" height="135"  width="187"/>
+	<s:VideoDisplay id="videoParticipant3" x="596" y="347" height="135"  width="190"/>
+	<s:VideoDisplay id="videoParticipant4" x="8" y="494" height="140"  width="192"/>
+	<s:VideoDisplay id="videoParticipant5" x="209" y="498" height="136"  width="187"/>
+	<s:VideoDisplay id="videoParticipant6" x="404" y="498" height="136"  width="187"/>
+	<s:VideoDisplay id="videoParticipant7" x="599" y="498" height="136"  width="187"/>
+	<mx:VideoDisplay id="videoInstructor" x="10" y="10" width="578" height="273"/>
+	
+	
+	
+</s:Application>
